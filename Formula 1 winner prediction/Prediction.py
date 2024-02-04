@@ -249,7 +249,7 @@ else:
 
 loop = input("Za koliko prethodnih godina zelite prosek pogodjenih: ")
 loop=int(loop)
-j=year
+g=year
 if year-loop>2000:
     year=year-loop
 else:
@@ -319,10 +319,7 @@ zbirprocenataros=0
 zbirprocenatalasso=0
 zbirprocenataridge=0
 zbirprocenataelastic=0
-
-while year<=j:
-    print(j)
-    print(year)
+while year<=g:
     filtered_df = df_final_keepPositionOrder[df_final_keepPositionOrder['year'] < year]
     y =  filtered_df["positionOrder"]
     x =filtered_df.drop(columns=["positionOrder","Top 3 Finish"])
@@ -394,12 +391,30 @@ while year<=j:
         'real_points':0,
         'constructorId':0,
     })
-    for i in range(len(new_X)):
-        result_df_reg.loc[result_df_reg['driverId'] == new_X.iloc[i]['driverId'], 'constructorId'] = new_X.iloc[i]['constructorId']
+    #for i in range(len(new_X)):
+       # result_df_reg.loc[result_df_reg['driverId'] == new_X.iloc[i]['driverId'], 'constructorId'] = new_X.iloc[i]['constructorId']
 
     right=0
     right_podium_total=0
     right_podium=0
+    countglobal=count
+    driverscount=0
+    filtered_df1 = df_final_keepPositionOrder[df_final_keepPositionOrder['year'] == year]
+    
+    for i in range(len(filtered_df1)):
+        driver_id = filtered_df1.iloc[i]['driverId']
+        result_df_reg.loc[result_df_reg['driverId'] == driver_id, 'constructorId'] = filtered_df1.iloc[i]['constructorId']
+    driverscount = filtered_df1['driverId'].nunique()
+    if year==g:
+        matricareal = np.zeros((driverscount, count-1))
+        matricapredict = np.zeros((driverscount, count-1))
+        driver_ids = filtered_df1['driverId'].unique()
+        if len(driver_ids) == len(matricareal):
+            matricareal[:, 0] = driver_ids
+            matricapredict[:, 0] = driver_ids
+            print("Matrix after updating the first column:")
+        else:
+            print("Length mismatch between 'driver_ids' and 'new_matrica'")
     for i in range(2,count):
         counter=0
         print("#########################################################")
@@ -424,21 +439,46 @@ while year<=j:
         mae = mean_absolute_error(df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year) & (df_final_keepPositionOrder['round']==i)]['positionOrder'],predicted_classes_assigned)
         print(f"Mean Absolute Error: {mae:.2f}")
         rezkopija = predicted_classes_assigned.copy()
-        for i in range(0,10):
+        for j in range(0,10):
             min_index = np.argmin(rezkopija)
-            if (min_index in {0, 1, 2}) and i == 0:
+            if (min_index in {0, 1, 2}) and j == 0:
                 right_podium = right_podium + 1
-            if (min_index in {0, 1, 2}) and i<3:
+            if (min_index in {0, 1, 2}) and j<3:
                 counter=counter+1
-            if counter==3 and i<3:
+            if counter==3 and j<3:
                 right_podium_total=right_podium_total+1        
-            result_df_reg.loc[result_df_reg['driverId'] == new_X.iloc[min_index]['driverId'], 'points'] += points[i]
-            result_df_reg.loc[result_df_reg['driverId'] == new_X.iloc[i]['driverId'], 'real_points'] += points[i]
+            result_df_reg.loc[result_df_reg['driverId'] == new_X.iloc[min_index]['driverId'], 'points'] += points[j]
+            result_df_reg.loc[result_df_reg['driverId'] == new_X.iloc[j]['driverId'], 'real_points'] += points[j]
+            if i>2 and g==year:
+                index_to_update = np.where(matricareal[:, 0] == new_X.iloc[j]['driverId'])[0]
+                matricareal[index_to_update,i-1] = points[j]+matricareal[index_to_update,i-2]
+                index_to_update = np.where(matricapredict[:, 0] == new_X.iloc[min_index]['driverId'])[0]
+                matricapredict[index_to_update,i-1] = points[j]+matricapredict[index_to_update,i-2]
+            elif g==year:
+                index_to_update = np.where(matricareal[:, 0] == new_X.iloc[j]['driverId'])[0]
+                matricareal[index_to_update,i-1] = points[j]
+                index_to_update = np.where(matricapredict[:, 0] == new_X.iloc[min_index]['driverId'])[0]
+                matricapredict[index_to_update,i-1] = points[j]
             rezkopija[min_index]=rezkopija[min_index]+20
+        if g==year:
+            indeks_nule = np.where(matricareal[:, i-1] == 0)[0]
+            for indeks in indeks_nule:
+                if i-1>1:
+                    matricareal[indeks, i-1] =matricareal[indeks, i-2] 
+            indeks_nule = np.where(matricapredict[:, i-1] == 0)[0]
+            for indeks in indeks_nule:
+                if i-1>1:
+                    matricapredict[indeks, i-1] =matricapredict[indeks, i-2] 
+
         if winner_surname==winner_surname1:
             right=right+1
     count2=count-2 
     accuracyreg=(right/count2)*100
+    if g==year:
+        rows_to_drop = np.all(matricareal[:, 1:] == 0, axis=1) & np.all(matricapredict[:, 1:] == 0, axis=1)
+        matricareal = matricareal[~rows_to_drop]
+        matricapredict = matricapredict[~rows_to_drop]
+        print(matricapredict)
     zbirprocenatareg=zbirprocenatareg+accuracyreg     
     print("Procenat pogodjenih pobednika je: {:.2%}".format(right/count2))  
     accuracyreg1=(right_podium_total/count2)*100
@@ -462,7 +502,7 @@ while year<=j:
 
     #---------------------------------------------------------------------------------------------------------
     print("--------------------------------RANDOM FOREST CLASSIFIER-------------------------------------------")
-
+    from sklearn.metrics import f1_score
     from sklearn.metrics import precision_score
     classifier = RandomForestClassifier(n_estimators=50,max_depth=5,random_state=42)
     y=y.apply(lambda x: 1 if x == 1 else 2 if x==2 else 3 if x==3 else 4)
@@ -475,6 +515,8 @@ while year<=j:
     print(line.get_rsquared_adj(classifier,X_test1,y_test1))
     y_pred = classifier.predict(X_test1)
     accuracy = accuracy_score(y_test1, y_pred)
+    f1forest = f1_score(y_test1, y_pred,average='weighted')
+    print(f"F1-skor: {f1forest}")
     print(f'Accuracy: {accuracy}')
     df = pd.DataFrame({'y_test': y_test1, 'y_pred': y_pred})
     correct_predictions=0
@@ -628,16 +670,16 @@ while year<=j:
         mae = mean_absolute_error(df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year) & (df_final_keepPositionOrder['round']==i)]['positionOrder'],predicted_classes_assigned)
         print(f"Mean Absolute Error: {mae:.2f}")
         rezkopija = predicted_classes_assigned.copy()
-        for i in range(0,10):
+        for j in range(0,10):
             min_index = np.argmin(rezkopija)
-            if (min_index in {0, 1, 2}) and i == 0:
+            if (min_index in {0, 1, 2}) and j == 0:
                 right_podium = right_podium + 1
-            if (min_index in {0, 1, 2}) and i<3:
+            if (min_index in {0, 1, 2}) and j<3:
                 counter=counter+1
-            if counter==3 and i<3:
+            if counter==3 and j<3:
                 right_podium_total=right_podium_total+1        
-            resultforest_df.loc[resultforest_df['driverId'] == new_X.iloc[min_index]['driverId'], 'points'] += points[i]
-            resultforest_df.loc[resultforest_df['driverId'] == new_X.iloc[i]['driverId'], 'real_points'] += points[i]
+            resultforest_df.loc[resultforest_df['driverId'] == new_X.iloc[min_index]['driverId'], 'points'] += points[j]
+            resultforest_df.loc[resultforest_df['driverId'] == new_X.iloc[j]['driverId'], 'real_points'] += points[j]
             rezkopija[min_index]=rezkopija[min_index]+20
         if winner_surname==winner_surname1:
             right=right+1
@@ -676,6 +718,8 @@ while year<=j:
     model.fit(X_train4, y_train4)
     r_adjustedlog=line.get_rsquared_adj(model,X_test4,y_test4)
     y_pred = model.predict(X_test4)
+    f1log = f1_score(y_test4, y_pred,average='weighted')
+    print(f"F1-skor: {f1log}")
     labels_proba = model.predict_proba(X_test4)[:, 1]
     y_pred_proba=model.predict_proba(X_test4)
     # Evaluacija performansi modela
@@ -760,6 +804,8 @@ while year<=j:
     r_adjustedross=line.get_rsquared_adj(classifier,X_test1,y_test1)
     print(line.get_rsquared_adj(classifier,X_test1,y_test1))
     y_pred = classifier.predict(X_test1)
+    f1ros = f1_score(y_test1, y_pred,average='weighted')
+    print(f"F1-skor: {f1ros}")
     accuracy = accuracy_score(y_test1, y_pred)
     print(f'Accuracy: {accuracy}')
     df = pd.DataFrame({'y_test': y_test1, 'y_pred': y_pred})
@@ -891,16 +937,16 @@ while year<=j:
         mae = mean_absolute_error(df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year) & (df_final_keepPositionOrder['round']==i)]['positionOrder'],predicted_classes_assigned)
         print(f"Mean Absolute Error: {mae:.2f}")
         rezkopija = predicted_classes_assigned.copy()
-        for i in range(0,10):
+        for j in range(0,10):
             min_index = np.argmin(rezkopija)
-            if (min_index in {0, 1, 2}) and i == 0:
+            if (min_index in {0, 1, 2}) and j == 0:
                 right_podium = right_podium + 1
-            if (min_index in {0, 1, 2}) and i<3:
+            if (min_index in {0, 1, 2}) and j<3:
                 counter=counter+1
-            if counter==3 and i<3:
+            if counter==3 and j<3:
                 right_podium_total=right_podium_total+1        
-            result_df_lasso.loc[result_df_lasso['driverId'] == new_X.iloc[min_index]['driverId'], 'points'] += points[i]
-            result_df_lasso.loc[result_df_lasso['driverId'] == new_X.iloc[i]['driverId'], 'real_points'] += points[i]
+            result_df_lasso.loc[result_df_lasso['driverId'] == new_X.iloc[min_index]['driverId'], 'points'] += points[j]
+            result_df_lasso.loc[result_df_lasso['driverId'] == new_X.iloc[j]['driverId'], 'real_points'] += points[j]
             rezkopija[min_index]=rezkopija[min_index]+20
         if winner_surname==winner_surname1:
             right=right+1
@@ -997,16 +1043,16 @@ while year<=j:
         mae = mean_absolute_error(df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year) & (df_final_keepPositionOrder['round']==i)]['positionOrder'],predicted_classes_assigned)
         print(f"Mean Absolute Error: {mae:.2f}")
         rezkopija = predicted_classes_assigned.copy()
-        for i in range(0,10):
+        for j in range(0,10):
             min_index = np.argmin(rezkopija)
-            if (min_index in {0, 1, 2}) and i == 0:
+            if (min_index in {0, 1, 2}) and j == 0:
                 right_podium = right_podium + 1
-            if (min_index in {0, 1, 2}) and i<3:
+            if (min_index in {0, 1, 2}) and j<3:
                 counter=counter+1
-            if counter==3 and i<3:
+            if counter==3 and j<3:
                 right_podium_total=right_podium_total+1        
-            result_df_ridge.loc[result_df_ridge['driverId'] == new_X.iloc[min_index]['driverId'], 'points'] += points[i]
-            result_df_ridge.loc[result_df_ridge['driverId'] == new_X.iloc[i]['driverId'], 'real_points'] += points[i]
+            result_df_ridge.loc[result_df_ridge['driverId'] == new_X.iloc[min_index]['driverId'], 'points'] += points[j]
+            result_df_ridge.loc[result_df_ridge['driverId'] == new_X.iloc[j]['driverId'], 'real_points'] += points[j]
             rezkopija[min_index]=rezkopija[min_index]+20
         if winner_surname==winner_surname1:
             right=right+1
@@ -1360,11 +1406,26 @@ plt.bar(model_names, r2_values, color=colors)
 plt.ylim(0, 1) 
 plt.title('R^2 adjusted vrednosti za različite modele')
 plt.xlabel('Modeli')
-plt.ylabel('R^2 vrednost')
+plt.ylabel('R^2 adjusted vrednost')
 for i, value in enumerate(r2_values):
     plt.text(i, value + 0.02, f'{value:.2f}', ha='center', va='bottom', fontsize=10, color='black')
 plt.show()
+#----------------------------------------------------------------------------------------------------------------------------------
+#Uporedjivanje Metrike za klasifikacione modele
 
+model_names = [ 'RFC','LogisticReg', 'ROS']
+f1_values = [f1forest,f1log,f1ros]
+colors = ['blue', 'green', 'orange']
+plt.bar(model_names, f1_values, color=colors)
+plt.ylim(0, 1) 
+plt.title('F1 score vrednosti za različite modele')
+plt.xlabel('Modeli')
+plt.ylabel('F1 score vrednost')
+for i, value in enumerate(f1_values):
+    plt.text(i, value + 0.02, f'{value:.2f}', ha='center', va='bottom', fontsize=10, color='black')
+plt.show()
+
+#----------------------------------------------------------------------------------------------------------------------
 models = ['LinearReg', 'RFC', 'RFR', 'LogisticReg', 'Ros', 'Lasso', 'Ridge','Elastic']
 predicted_values = [predicted1.values, predicted2.values, predicted3.values, predicted4.values, predicted5.values,predictedlas.values, predicted6.values, predicted7.values]
 plt.bar(models, [1 if realwinner1 == pred else 0 for pred in predicted_values], color='green', alpha=0.7, label='Tačno predviđanje')
@@ -1377,7 +1438,7 @@ for i, model in enumerate(models):
 
 plt.xlabel('Modeli')
 plt.ylabel('Predviđanje')
-plt.title('Prikaz stvarnog i predviđenog pobednika za svaki model')
+plt.title(f'Prikaz stvarnog i predviđenog pobednika za svaki model za odabranu godinu {year} i rundu {round}')
 plt.legend()
 plt.show()
 
@@ -1412,8 +1473,8 @@ for i, procenat in enumerate(procenat_pogodaka):
     plt.text(i, procenat + 1, f'{procenat:.2f}%', ha='center', va='bottom', fontsize=10)
 
 plt.xlabel('Modeli')
-plt.ylabel(f'Procenat pogodaka za godinu {year}')
-plt.title('Procenat pogodaka za svaki model')
+plt.ylabel('Procenat pogodaka')
+plt.title(f'Procenat pogodaka za svaki model za godinu {year}')
 plt.ylim(0, 100)
 plt.show()
 
@@ -1439,6 +1500,79 @@ plt.ylabel('Procenat pogodaka')
 plt.title(f'Procenat da je predvidjeni pobednik zavrsio u TOP 3 za {year}. godinu')
 plt.ylim(0, 100)
 plt.show()
+
+#----------------------------------------------------------------------------------------
+#Graficki prikaz kretanja poena tokom odabrane godine
+import plotly.express as px
+from matplotlib.animation import FuncAnimation
+driver_ids = matricapredict[:, 0]
+merged_df = pd.merge(drivers_df, pd.DataFrame({'driverId': driver_ids}), on='driverId')
+def map_surname(driver_id):
+    return merged_df[merged_df['driverId'] == driver_id]['surname'].values[0]
+vectorized_map = np.vectorize(map_surname)
+driver_surnames = vectorized_map(driver_ids)
+poeni = matricapredict[:, 1:]
+
+fig, ax = plt.subplots(figsize=(10, 6))
+lines = [ax.plot([], [], label=f'{driver_surnames[i-1]}', marker='o')[0] for i in range(1, len(driver_surnames) + 1)]
+colors = plt.cm.Dark2.colors
+def init():
+    for line, color in zip(lines, colors):
+        line.set_data([], [])
+        line.set_color(color)
+    ax.set_xlabel('Runda')
+    ax.set_ylabel('Broj poena')
+    ax.set_xticks(range(1, len(poeni[0]) + 1))
+    ax.set_ylim(0, 500)
+    ax.set_title('Prediktovan broj osvojenih poena tokom godine')
+    ax.legend(loc='upper left')
+    return lines
+
+def animate(frame):
+    for i, (line, poeni_vozaca) in enumerate(zip(lines, poeni), start=1):
+        line.set_data(range(1, frame + 1), poeni_vozaca[:frame])
+    ax.autoscale_view()
+    ax.set_ylim(0, 500)
+    return lines
+
+ani = FuncAnimation(fig, animate, frames=len(poeni[0]), init_func=init, interval=1000, blit=True)
+
+plt.show()
+
+driver_ids = matricareal[:, 0]
+merged_df = pd.merge(drivers_df, pd.DataFrame({'driverId': driver_ids}), on='driverId')
+def map_surname(driver_id):
+    return merged_df[merged_df['driverId'] == driver_id]['surname'].values[0]
+vectorized_map = np.vectorize(map_surname)
+driver_surnames = vectorized_map(driver_ids)
+poeni = matricareal[:, 1:]
+
+fig, ax = plt.subplots(figsize=(10, 6))
+lines = [ax.plot([], [], label=f'{driver_surnames[i-1]}', marker='o')[0] for i in range(1, len(driver_surnames) + 1)]
+colors = plt.cm.Dark2.colors
+def init():
+    for line, color in zip(lines, colors):
+        line.set_data([], [])
+        line.set_color(color)
+    ax.set_xlabel('Runda')
+    ax.set_ylabel('Broj poena')
+    ax.set_xticks(range(1, len(poeni[0]) + 1))
+    ax.set_ylim(0, 500)
+    ax.set_title('Stvaran broj osvojenih poena tokom godine')
+    ax.legend(loc='upper left')
+    return lines
+
+def animate(frame):
+    for i, (line, poeni_vozaca) in enumerate(zip(lines, poeni), start=1):
+        line.set_data(range(1, frame + 1), poeni_vozaca[:frame])
+    ax.autoscale_view()
+    ax.set_ylim(0, 500)
+    return lines
+
+ani = FuncAnimation(fig, animate, frames=len(poeni[0]), init_func=init, interval=1000, blit=True)
+
+plt.show()
+
 #----------------------------------------------------------------------------------------
 #ZA SAFETY CAR
 odel_names = ['RFC']
@@ -1448,7 +1582,7 @@ bar_width = 0.2
 plt.bar(metric_names, model1_metrics, color=['skyblue', 'lightgreen'], width=bar_width)
 for i, value in enumerate(model1_metrics):
     plt.text(i, value + 0.02, f'{value:.2f}', ha='center', va='bottom', fontsize=8)
-plt.title('Performanse modela po metrikama za safety car')
+plt.title('Performanse modela po metrikama za predvidjanje izlaska safety car-a')
 plt.xlabel('Metrike')
 plt.ylabel('Vrednosti metrike')
 plt.show()
@@ -1460,7 +1594,7 @@ plt.bar(models, procenat_pogodaka, color='skyblue', width=bar_width)
 for i, procenat in enumerate(procenat_pogodaka):
     plt.text(i, procenat + 1, f'{procenat:.2f}%', ha='center', va='bottom', fontsize=10)
 plt.xlabel('Modeli')
-plt.ylabel('Procenat pogodaka za safety car')
+plt.ylabel('Procenat tačnosti')
 plt.title(f'Procenat tačnosti izlaska safety car-a za {year1}. godinu')
 plt.ylim(0, 100)
 plt.show()
@@ -1477,7 +1611,7 @@ for i, value in enumerate(r2_adjusted_values):
 plt.ylim(0, 1) 
 plt.title('R^2 adjusted za promenu guma (pitstop)')
 plt.xlabel('Modeli')
-plt.ylabel('R^2 vrednost')
+plt.ylabel('R^2 adjusted vrednost')
 plt.show()
 
 model_names = ['RFR']
@@ -1502,7 +1636,6 @@ plt.xlabel('Modeli')
 plt.ylabel('Procenat prosečne greške')
 plt.title(f'Procenat prosečne greške za promenu guma za {year1}. godinu')
 plt.ylim(0, 100)
-plt.text(0.5, -5, 'Ovo je komentar', fontsize=10, color='red', ha='center', va='center')
 plt.show()
 #---------------------------------------------------------------------
 #SVAKI OD OVIH PROCENA ALI ZA n GODINA + uneta
@@ -1519,42 +1652,50 @@ plt.ylim(0, 100)
 plt.show()
 #---------------------------------------------------------------------
 #Prikaz championshipa
-colors = np.where(result_df_reg['real_points'] == np.minimum(result_df_reg['real_points'], result_df_reg['points']), 'orange', 'blue')
+colors = np.where(result_df_reg['points'] == np.minimum(result_df_reg['points'], result_df_reg['real_points']), 'blue', 'orange')
 plt.figure(figsize=(10, 6))
-plt.barh(result_df_reg['surname'], np.minimum(result_df_reg['real_points'], result_df_reg['points']), color=colors, alpha=1, label='Stvarni poeni')
-plt.barh(result_df_reg['surname'], abs(result_df_reg['real_points'] - result_df_reg['points']),left=np.minimum(result_df_reg['real_points'], result_df_reg['points']), color=np.where(colors == 'orange', 'blue', 'orange'), alpha=1, label='Predviđeni poeni')
-plt.xlabel('Vozači')
-plt.ylabel('Poeni')
+plt.barh(result_df_reg['surname'], np.minimum(result_df_reg['real_points'], result_df_reg['points']), color=colors, alpha=1)
+plt.barh(result_df_reg['surname'], abs(result_df_reg['real_points'] - result_df_reg['points']),left=np.minimum(result_df_reg['real_points'], result_df_reg['points']), color=np.where(colors == 'orange', 'blue', 'orange'), alpha=1)
+plt.text(0.8, 0.9, 'Stvarna', color='orange', transform=plt.gca().transAxes)
+plt.text(0.8, 0.85, 'Prediktovana', color='blue', transform=plt.gca().transAxes)
+plt.xlabel('Poeni')
+plt.ylabel('Vozači')
 plt.title('Predviđeni vs. Stvarni poeni za svakog vozača Regresija')
 plt.legend()
 plt.show()
 
-colors = np.where(resultforest_df['real_points'] == np.minimum(resultforest_df['real_points'], resultforest_df['points']), 'orange', 'blue')
+colors = np.where(resultforest_df['points'] == np.minimum(resultforest_df['points'], resultforest_df['real_points']), 'blue', 'orange')
 plt.figure(figsize=(10, 6))
-plt.barh(resultforest_df['surname'],np.minimum(resultforest_df['real_points'], resultforest_df['points']), color=colors, label='Stvarni poeni')
-plt.barh(resultforest_df['surname'], abs(resultforest_df['real_points'] - resultforest_df['points']),left=np.minimum(resultforest_df['real_points'], resultforest_df['points']), color=np.where(colors == 'orange', 'blue', 'orange'), label='Predviđeni poeni')
-plt.xlabel('Vozači')
-plt.ylabel('Poeni')
+plt.barh(resultforest_df['surname'],np.minimum(resultforest_df['real_points'], resultforest_df['points']), color=colors)
+plt.barh(resultforest_df['surname'], abs(resultforest_df['real_points'] - resultforest_df['points']),left=np.minimum(resultforest_df['real_points'], resultforest_df['points']), color=np.where(colors == 'orange', 'blue', 'orange'))
+plt.text(0.8, 0.9, 'Stvarna', color='orange', transform=plt.gca().transAxes)
+plt.text(0.8, 0.85, 'Prediktovana', color='blue', transform=plt.gca().transAxes)
+plt.xlabel('Poeni')
+plt.ylabel('Vozači')
 plt.title('Predviđeni vs. Stvarni poeni za svakog vozača Forest')
 plt.legend()
 plt.show()
 
-colors = np.where(result_df_lasso['real_points'] == np.minimum(result_df_lasso['real_points'], result_df_lasso['points']), 'orange', 'blue')
+colors = np.where(result_df_lasso['points'] == np.minimum(result_df_lasso['points'], result_df_lasso['real_points']), 'blue', 'orange')
 plt.figure(figsize=(10, 6))
-plt.barh(result_df_lasso['surname'], np.minimum(result_df_lasso['real_points'], result_df_lasso['points']), color=colors, label='Stvarni poeni')
-plt.barh(result_df_lasso['surname'], abs(result_df_lasso['real_points'] - result_df_lasso['points']),left=np.minimum(result_df_lasso['real_points'], result_df_lasso['points']),color=np.where(colors == 'orange', 'blue', 'orange'), label='Predviđeni poeni')
-plt.xlabel('Vozači')
-plt.ylabel('Poeni')
+plt.barh(result_df_lasso['surname'], np.minimum(result_df_lasso['real_points'], result_df_lasso['points']), color=colors)
+plt.barh(result_df_lasso['surname'], abs(result_df_lasso['real_points'] - result_df_lasso['points']),left=np.minimum(result_df_lasso['real_points'], result_df_lasso['points']),color=np.where(colors == 'orange', 'blue', 'orange'))
+plt.text(0.8, 0.9, 'Stvarna', color='orange', transform=plt.gca().transAxes)
+plt.text(0.8, 0.85, 'Prediktovana', color='blue', transform=plt.gca().transAxes)
+plt.xlabel('Poeni')
+plt.ylabel('Vozači')
 plt.title('Predviđeni vs. Stvarni poeni za svakog vozača Lasso')
 plt.legend()
 plt.show()
 
-colors = np.where(result_df_ridge['real_points'] == np.minimum(result_df_ridge['real_points'], result_df_ridge['points']), 'orange', 'blue')
+colors = np.where(result_df_ridge['points'] == np.minimum(result_df_ridge['points'], result_df_ridge['real_points']), 'blue', 'orange')
 plt.figure(figsize=(10, 6))
-plt.barh(result_df_ridge['surname'], np.minimum(result_df_ridge['real_points'], result_df_ridge['points']), color=colors, label='Stvarni poeni')
-plt.barh(result_df_ridge['surname'], abs(result_df_ridge['real_points'] - result_df_ridge['points']),left=np.minimum(result_df_ridge['real_points'], result_df_ridge['points']), color=np.where(colors == 'orange', 'blue', 'orange'), label='Predviđeni poeni')
-plt.xlabel('Vozači')
-plt.ylabel('Poeni')
+plt.barh(result_df_ridge['surname'], np.minimum(result_df_ridge['real_points'], result_df_ridge['points']), color=colors)
+plt.barh(result_df_ridge['surname'], abs(result_df_ridge['real_points'] - result_df_ridge['points']),left=np.minimum(result_df_ridge['real_points'], result_df_ridge['points']), color=np.where(colors == 'orange', 'blue', 'orange'))
+plt.text(0.8, 0.9, 'Stvarna', color='orange', transform=plt.gca().transAxes)
+plt.text(0.8, 0.85, 'Prediktovana', color='blue', transform=plt.gca().transAxes)
+plt.xlabel('Poeni')
+plt.ylabel('Vozači')
 plt.title('Predviđeni vs. Stvarni poeni za svakog vozača Ridge')
 plt.legend()
 plt.show()
