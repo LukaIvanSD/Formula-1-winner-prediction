@@ -1522,7 +1522,7 @@ def init():
         line.set_color(color)
     ax.set_xlabel('Runda')
     ax.set_ylabel('Broj poena')
-    ax.set_xticks(range(1, len(poeni[0]) + 1))
+    ax.set_xticks(range(1, len(poeni[0]) + 2))
     ax.set_ylim(0, 500)
     ax.set_title('Prediktovan broj osvojenih poena tokom godine')
     ax.legend(loc='upper left')
@@ -1535,7 +1535,7 @@ def animate(frame):
     ax.set_ylim(0, 500)
     return lines
 
-ani = FuncAnimation(fig, animate, frames=len(poeni[0]), init_func=init, interval=1000, blit=True)
+ani = FuncAnimation(fig, animate, frames=len(poeni[0])+1, init_func=init, interval=1000, blit=True)
 
 plt.show()
 
@@ -1556,7 +1556,7 @@ def init():
         line.set_color(color)
     ax.set_xlabel('Runda')
     ax.set_ylabel('Broj poena')
-    ax.set_xticks(range(1, len(poeni[0]) + 1))
+    ax.set_xticks(range(1, len(poeni[0]) + 2))
     ax.set_ylim(0, 500)
     ax.set_title('Stvaran broj osvojenih poena tokom godine')
     ax.legend(loc='upper left')
@@ -1569,14 +1569,14 @@ def animate(frame):
     ax.set_ylim(0, 500)
     return lines
 
-ani = FuncAnimation(fig, animate, frames=len(poeni[0]), init_func=init, interval=1000, blit=True)
+ani = FuncAnimation(fig, animate, frames=len(poeni[0])+1, init_func=init, interval=1000, blit=True)
 
 plt.show()
 
 #----------------------------------------------------------------------------------------
 #ZA SAFETY CAR
 odel_names = ['RFC']
-metric_names = ['R^2', 'ACCURACY']
+metric_names = ['R^2 adjusted', 'ACCURACY']
 model1_metrics = [r2_adjustedsafety, accuracysafety]
 bar_width = 0.2
 plt.bar(metric_names, model1_metrics, color=['skyblue', 'lightgreen'], width=bar_width)
