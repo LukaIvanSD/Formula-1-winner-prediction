@@ -239,8 +239,6 @@ def get_rsquared_adj(model, features, labels):
     y_pred = model.predict(features)
     from sklearn.metrics import r2_score
     r_squared = r2_score(labels, y_pred)
-    df = pd.DataFrame({'labels': labels, 'y_pred': y_pred})
-    df.to_csv('output222.csv', index=False)
     n = len(labels)
     p = features.shape[1]  # Broj atributa
     adjusted_r_squared = 1 - (1 - r_squared) * (n - 1) / (n - p - 1)

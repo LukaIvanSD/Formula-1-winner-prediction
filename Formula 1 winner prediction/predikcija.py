@@ -11,7 +11,6 @@ races_df = pd.read_csv('races.csv')
 constructor_df = pd.read_csv('constructors.csv')
 driver_standings_df = pd.read_csv('driver_standings.csv')
 constructor_standings_df = pd.read_csv('constructor_standings.csv')
-preseason_df=pd.read_csv('F1Testing.csv')
 qualifying_df=pd.read_csv('qualifying.csv')
 pitstops_df=pd.read_csv('pit_stops.csv')
 weather_df=pd.read_csv('weather.csv')
@@ -22,21 +21,6 @@ constructor_standings_df = pd.merge(constructor_standings_df, races_df[['raceId'
 constructor_standings_df=constructor_standings_df[constructor_standings_df['year']>=2000]
 constructor_standings_df = constructor_standings_df.reset_index(drop=True)
 constructor_standings_df = constructor_standings_df.loc[constructor_standings_df.groupby('year')['points'].idxmax()]
-'''
-import fastf1
-season_df=fastf1.get_session(2019,14,'R')
-season_df.load(weather=True)
-print(season_df.weather_data)
-pd_df=pd.DataFrame(season_df.weather_data)
-pd_df.to_csv("Fast.csv",index=False)
-
-season_df=fastf1.get_session(2020,15,'R')
-season_df.load(weather=True)
-print(season_df.weather_data)
-pd_df=pd.DataFrame(season_df.weather_data)
-pd_df.to_csv("Fast1.csv",index=False)
-# Ispis rezultata
-'''
 race_df = races_df[["raceId", "year", "round", "circuitId"]].copy()
 #Predprocesiranje
 import pandas as pd
@@ -342,8 +326,6 @@ while year<=j:
     filtered_df = df_final_keepPositionOrder[df_final_keepPositionOrder['year'] < year]
     y =  filtered_df["positionOrder"]
     x =filtered_df.drop(columns=["positionOrder","Top 3 Finish"])
-    x.to_csv("x.csv",index=False)
-    y.to_csv("y.csv",index=False)
     points = np.array([25, 18, 15, 12, 10, 8, 6, 4, 2, 1])
     from sklearn.model_selection import train_test_split
     from sklearn.linear_model import LinearRegression
@@ -465,7 +447,7 @@ while year<=j:
     print("Procenat pogodjenih da je prediktovani pobednik zavrsio na podiumu je: {:.2%}".format(right_podium/count2))   
     result_df_reg = result_df_reg[(result_df_reg['real_points'] != 0) | (result_df_reg['points'] != 0)]   
     result_df_reg=result_df_reg.sort_values(by='points', ascending=False)   
-    result_df_reg.to_csv("Rezultati.csv",index=False)
+    result_df_reg.to_csv("RezultatiReg.csv",index=False)
     saberi_po_constructorId = result_df_reg.groupby('constructorId')['points'].sum().reset_index()
     saberi_po_constructorId = saberi_po_constructorId.sort_values(by='points', ascending=False).reset_index(drop=True)
     merged_df = saberi_po_constructorId.merge(constructor_df, on='constructorId', how='left')
@@ -484,7 +466,6 @@ while year<=j:
     from sklearn.metrics import precision_score
     classifier = RandomForestClassifier(n_estimators=50,max_depth=5,random_state=42)
     y=y.apply(lambda x: 1 if x == 1 else 2 if x==2 else 3 if x==3 else 4)
-    y.to_csv("FORESTCLASS_Y.csv",index=False)
     X_train1, X_test1, y_train1, y_test1 = train_test_split(x, y, test_size=0.2, random_state=42)
     classifier.fit(X_train1, y_train1)
 
@@ -1171,13 +1152,11 @@ safety_cars_df_final['year'] = safety_cars_df_final['year'].astype(int)
 races_df['year'] = races_df['year'].astype(int)
 safety_cars_df_final = pd.merge(safety_cars_df_final, races_df[['name','year','circuitId']], on=['name','year'], how='left')
 safety_cars_df_final = safety_cars_df_final.groupby(['year','name']).agg(aggregations2).reset_index()
-safety_cars_df_final.to_csv("Safetymoe.csv",index=False)
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 print("----------------------------------Predikcija Broja izlaska safety car-a na trci----------------------------------------------")
 df_final_keepPositionOrder1=df_final_keepPositionOrder.drop(columns=['driverId','constructorId','grid','positionOrder','Top 3 Finish','Driver Top 3 Finish Percentage (Last Year)','Constructor Top 3 Finish Percentage (Last Year)','Driver Top 3 Finish Percentage (This Year till last race)','Constructor Top 3 Finish Percentage (This Year till last race)','Driver Avg position (Last Year)','Constructor Avg position (Last Year)','Driver Average Position (This Year till last race)','Constructor Average Position (This Year till last race)','Champ Last Year'])
 df_final_keepPositionOrder1 = pd.merge(df_final_keepPositionOrder1,safety_cars_df_final [['year','circuitId','Group_Count']], on=['year', 'circuitId'], how='left')
 df_final_keepPositionOrder1=df_final_keepPositionOrder1.fillna(0)
-weather_df_final.to_csv("Zasafety.csv",index=False)
 df_final_keepPositionOrder1 = pd.merge(df_final_keepPositionOrder1,weather_df_final [['year','circuitId','weather_warm','weather_cold','weather_dry','weather_wet','weather_cloudy']], on=['year', 'circuitId'], how='left')
 df_final_keepPositionOrder1=df_final_keepPositionOrder1.dropna()
 novo_ime = {'Group_Count': 'SafetyCar'}
@@ -1186,7 +1165,6 @@ df_final_keepPositionOrder1.loc[df_final_keepPositionOrder1['SafetyCar'] > 0, 'S
 df_final_keepPositionOrder1['statusId'] = df_final_keepPositionOrder1['statusId'].apply(
     lambda x: 0 if x==1 else 0 if x==2 else 1
 )
-df_final_keepPositionOrder1.to_csv("PROVERA.csv",index=False)
 df_final_keepPositionOrder1 = df_final_keepPositionOrder1.groupby(['year', 'round']).agg({
     'SafetyCar': 'first',
     'weather_warm': 'first',
@@ -1200,7 +1178,6 @@ df_final_keepPositionOrder1 = df_final_keepPositionOrder1.groupby(['year', 'roun
 filtered_df1 = df_final_keepPositionOrder1[df_final_keepPositionOrder1['year'] < 2019]
 x=filtered_df1.drop(columns='SafetyCar')
 y=filtered_df1['SafetyCar']
-df_final_keepPositionOrder1.to_csv("Safetymoe1.csv",index=False)
 X_train6, X_test6, y_train6, y_test6 = train_test_split(x, y, test_size=0.3, random_state=42)
 
 
@@ -1293,9 +1270,6 @@ for i in weather_df_final.index:
 weather_df_final_test = weather_df_final[weather_df_final['year'] < year1]
 weather_df_final_test = weather_df_final_test.groupby(['year','circuitId','round']).agg(aggregations3).reset_index()
 weather_df_final_test=weather_df_final_test.sort_values(by=['year','round'], ascending=True)
-safety_cars_df_final1.to_csv("Davidimo.csv",index=False)
-weather_df_final.to_csv("WET.csv",index=False)
-weather_df_final_test.to_csv("WETest.csv",index=False)
 y = weather_df_final_test["stop"]
 x = weather_df_final_test.drop(columns=["stop"])
 X_train, X_test, y_train, y_test = train_test_split(x,y, test_size=0.3, random_state=42)
