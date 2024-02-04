@@ -304,7 +304,7 @@ for index, row in df_final_keepPositionOrder.iterrows():
                     if champ==df_final_keepPositionOrder.loc[index, 'constructorId']:
                         df_final_keepPositionOrder.at[index, 'Champ Last Year'] = 1
 
-
+df_final_keepPositionOrder=df_final_keepPositionOrder.drop(columns="Top 3 Finish")
 df_final_keepPositionOrder.to_csv("df_final_keepPositionOrder.csv",index=False)
     
 
@@ -322,7 +322,7 @@ zbirprocenataelastic=0
 while year<=g:
     filtered_df = df_final_keepPositionOrder[df_final_keepPositionOrder['year'] < year]
     y =  filtered_df["positionOrder"]
-    x =filtered_df.drop(columns=["positionOrder","Top 3 Finish"])
+    x =filtered_df.drop(columns=["positionOrder"])
     points = np.array([25, 18, 15, 12, 10, 8, 6, 4, 2, 1])
     from sklearn.model_selection import train_test_split
     from sklearn.linear_model import LinearRegression
@@ -350,7 +350,7 @@ while year<=g:
     r2_1 = r2_score(y_test, y_pred)
     # Regresija testiranje
     data_2023 = df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year) & (df_final_keepPositionOrder['round']==round)]
-    new_X = data_2023.drop(columns=['positionOrder','Top 3 Finish'])
+    new_X = data_2023.drop(columns=['positionOrder'])
     # Prikazivanje koeficijenata atributa zajedno sa nazivima
     print("Koeficijenti atributa:")
     predicted_classes_2023 = regressor.predict(new_X)
@@ -419,7 +419,7 @@ while year<=g:
         counter=0
         print("#########################################################")
         data_2023 = df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year) & (df_final_keepPositionOrder['round'] == i)]
-        new_X = data_2023.drop(columns=['positionOrder', 'Top 3 Finish'])
+        new_X = data_2023.drop(columns=['positionOrder'])
         predicted_classes_2023 = regressor.predict(new_X)
         sorted_indices = np.argsort(predicted_classes_2023)
         assigned_values = np.arange(1, len(sorted_indices) + 1)
@@ -536,7 +536,7 @@ while year<=g:
 
     # Predikcija za klassifier=
     data_2023 = df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year  ) & (df_final_keepPositionOrder['round']==round )]
-    new_X = data_2023.drop(columns=['positionOrder','Top 3 Finish'])
+    new_X = data_2023.drop(columns=['positionOrder'])
     predicted_classes_2023 = classifier.predict_proba(new_X)
 
     # Prikazivanje važnosti atributa
@@ -561,7 +561,7 @@ while year<=g:
     for i in range(2, count):
         print("#########################################################")
         data_2023 = df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year) & (df_final_keepPositionOrder['round'] == i)]
-        new_X = data_2023.drop(columns=['positionOrder', 'Top 3 Finish'])
+        new_X = data_2023.drop(columns=['positionOrder'])
         predicted_classes_2023 = classifier.predict_proba(new_X)
         indeks_najveceg_reda = np.argmax(predicted_classes_2023[:, 0])
         indeks_najveceg_reda2 = np.argmax(predicted_classes_2023[:, 1])
@@ -601,7 +601,7 @@ while year<=g:
     r2_2=r2_score(y_test, y_pred)
     # rfr testiranje
     data_2023 = df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year) & (df_final_keepPositionOrder['round']==round)]
-    new_X = data_2023.drop(columns=['positionOrder','Top 3 Finish'])
+    new_X = data_2023.drop(columns=['positionOrder'])
     predicted_classes_2023 = regressor.predict(new_X)
     #Vaznost atributa
     print("Feature importances:")
@@ -650,7 +650,7 @@ while year<=g:
         counter=0
         print("#########################################################")
         data_2023 = df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year) & (df_final_keepPositionOrder['round'] == i)]
-        new_X = data_2023.drop(columns=['positionOrder', 'Top 3 Finish'])
+        new_X = data_2023.drop(columns=['positionOrder'])
         predicted_classes_2023 = regressor.predict(new_X)
         sorted_indices = np.argsort(predicted_classes_2023)
         assigned_values = np.arange(1, len(sorted_indices) + 1)
@@ -709,7 +709,7 @@ while year<=g:
     from sklearn.linear_model import LogisticRegression
     from sklearn.metrics import roc_curve, auc
     y1 = filtered_df["positionOrder"].apply(lambda x: 1 if x == 1 else 0)
-    x =filtered_df.drop(columns=["positionOrder","Top 3 Finish"])
+    x =filtered_df.drop(columns=["positionOrder"])
 
     # Podela podataka na trening i test set
     X_train4, X_test4, y_train4, y_test4 = train_test_split(x, y1, test_size=0.2, random_state=42)
@@ -757,7 +757,7 @@ while year<=g:
 
     # Predikcija za izabranu godinu i rundu
     data_2023 = df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year) & (df_final_keepPositionOrder['round']==round)]
-    new_X = data_2023.drop(columns=['positionOrder','Top 3 Finish'])
+    new_X = data_2023.drop(columns=['positionOrder'])
     predicted_classes_2023 = model.predict_proba(new_X)
     indeks_najveceg_reda = np.argmax(predicted_classes_2023[:, 1])
     print("Prediktovani pobednik je:")
@@ -771,7 +771,7 @@ while year<=g:
     for i in range(2, count):
         print("#########################################################")
         data_2023 = df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year) & (df_final_keepPositionOrder['round'] == i)]
-        new_X = data_2023.drop(columns=['positionOrder', 'Top 3 Finish'])
+        new_X = data_2023.drop(columns=['positionOrder'])
         predicted_classes_2023 = model.predict_proba(new_X)
         indeks_najveceg_reda = np.argmax(predicted_classes_2023[:, 1])
         winner_surname = drivers_df.loc[drivers_df['driverId'] == new_X.iloc[indeks_najveceg_reda]['driverId'], 'surname'].item()
@@ -825,7 +825,7 @@ while year<=g:
     #Predikcija za klassifier
 
     data_2023 = df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year  ) & (df_final_keepPositionOrder['round']==round )]
-    new_X = data_2023.drop(columns=['positionOrder','Top 3 Finish'])
+    new_X = data_2023.drop(columns=['positionOrder'])
     predicted_classes_2023 = classifier.predict_proba(new_X)
 
     # Prikazivanje važnosti atributa
@@ -848,7 +848,7 @@ while year<=g:
     for i in range(2, count):
         print("#########################################################")
         data_2023 = df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year) & (df_final_keepPositionOrder['round'] == i)]
-        new_X = data_2023.drop(columns=['positionOrder', 'Top 3 Finish'])
+        new_X = data_2023.drop(columns=['positionOrder'])
         predicted_classes_2023 = classifier.predict_proba(new_X)
         indeks_najveceg_reda = np.argmax(predicted_classes_2023[:, 0])
         indeks_najveceg_reda2 = np.argmax(predicted_classes_2023[:, 1])
@@ -889,7 +889,7 @@ while year<=g:
     r2_3= r2_score(y_test, y_pred)
     # Lasso testiranje
     data_2023 = df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year) & (df_final_keepPositionOrder['round']==round)]
-    new_X = data_2023.drop(columns=['positionOrder','Top 3 Finish'])
+    new_X = data_2023.drop(columns=['positionOrder'])
     predicted_classes_2023 = lasso_regressor.predict(new_X)
     min_index = np.argmin(predicted_classes_2023)
     predictedlas=drivers_df.where(drivers_df['driverId']==new_X.iloc[min_index]['driverId'])['surname'].dropna()
@@ -917,7 +917,7 @@ while year<=g:
         counter=0
         print("#########################################################")
         data_2023 = df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year) & (df_final_keepPositionOrder['round'] == i)]
-        new_X = data_2023.drop(columns=['positionOrder', 'Top 3 Finish'])
+        new_X = data_2023.drop(columns=['positionOrder'])
         predicted_classes_2023 = lasso_regressor.predict(new_X)
         sorted_indices = np.argsort(predicted_classes_2023)
         assigned_values = np.arange(1, len(sorted_indices) + 1)
@@ -995,7 +995,7 @@ while year<=g:
 
     # Ridge testiranje
     data_2023 = df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year) & (df_final_keepPositionOrder['round']==round)]
-    new_X = data_2023.drop(columns=['positionOrder','Top 3 Finish'])
+    new_X = data_2023.drop(columns=['positionOrder'])
     predicted_classes_2023 = ridge_regressor.predict(new_X)
     min_index = np.argmin(predicted_classes_2023)
     predicted6=drivers_df.where(drivers_df['driverId']==new_X.iloc[min_index]['driverId'])['surname'].dropna()
@@ -1023,7 +1023,7 @@ while year<=g:
         counter=0
         print("#########################################################")
         data_2023 = df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year) & (df_final_keepPositionOrder['round'] == i)]
-        new_X = data_2023.drop(columns=['positionOrder', 'Top 3 Finish'])
+        new_X = data_2023.drop(columns=['positionOrder'])
         predicted_classes_2023 = ridge_regressor.predict(new_X)
         sorted_indices = np.argsort(predicted_classes_2023)
         assigned_values = np.arange(1, len(sorted_indices) + 1)
@@ -1116,7 +1116,7 @@ while year<=g:
     r2_5 = r2_score(y_test, y_pred)
     elasticoef = best_elastic_net.coef_
     data_2023 = df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year  ) & (df_final_keepPositionOrder['round']==round )]
-    new_X = data_2023.drop(columns=['positionOrder','Top 3 Finish'])
+    new_X = data_2023.drop(columns=['positionOrder'])
     predicted_classes_2023 = best_elastic_net.predict(new_X)
     indeks_najveceg_reda = np.argmin(predicted_classes_2023)
     print("Prediktovani pobednik je:")
@@ -1130,7 +1130,7 @@ while year<=g:
     for i in range(2, count):
         print("#########################################################")
         data_2023 = df_final_keepPositionOrder[(df_final_keepPositionOrder['year'] == year) & (df_final_keepPositionOrder['round'] == i)]
-        new_X = data_2023.drop(columns=['positionOrder', 'Top 3 Finish'])
+        new_X = data_2023.drop(columns=['positionOrder'])
         predicted_classes_2023 = best_elastic_net.predict(new_X)
         indeks_najveceg_reda = np.argmin(predicted_classes_2023)
         winner_surname = drivers_df.loc[drivers_df['driverId'] == new_X.iloc[indeks_najveceg_reda]['driverId'], 'surname'].item()
@@ -1200,7 +1200,7 @@ safety_cars_df_final = pd.merge(safety_cars_df_final, races_df[['name','year','c
 safety_cars_df_final = safety_cars_df_final.groupby(['year','name']).agg(aggregations2).reset_index()
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 print("----------------------------------Predikcija Broja izlaska safety car-a na trci----------------------------------------------")
-df_final_keepPositionOrder1=df_final_keepPositionOrder.drop(columns=['driverId','constructorId','grid','positionOrder','Top 3 Finish','Driver Top 3 Finish Percentage (Last Year)','Constructor Top 3 Finish Percentage (Last Year)','Driver Top 3 Finish Percentage (This Year till last race)','Constructor Top 3 Finish Percentage (This Year till last race)','Driver Avg position (Last Year)','Constructor Avg position (Last Year)','Driver Average Position (This Year till last race)','Constructor Average Position (This Year till last race)','Champ Last Year'])
+df_final_keepPositionOrder1=df_final_keepPositionOrder.drop(columns=['driverId','constructorId','grid','positionOrder','Driver Top 3 Finish Percentage (Last Year)','Constructor Top 3 Finish Percentage (Last Year)','Driver Top 3 Finish Percentage (This Year till last race)','Constructor Top 3 Finish Percentage (This Year till last race)','Driver Avg position (Last Year)','Constructor Avg position (Last Year)','Driver Average Position (This Year till last race)','Constructor Average Position (This Year till last race)','Champ Last Year'])
 df_final_keepPositionOrder1 = pd.merge(df_final_keepPositionOrder1,safety_cars_df_final [['year','circuitId','Group_Count']], on=['year', 'circuitId'], how='left')
 df_final_keepPositionOrder1=df_final_keepPositionOrder1.fillna(0)
 df_final_keepPositionOrder1 = pd.merge(df_final_keepPositionOrder1,weather_df_final [['year','circuitId','weather_warm','weather_cold','weather_dry','weather_wet','weather_cloudy']], on=['year', 'circuitId'], how='left')
