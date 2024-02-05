@@ -307,7 +307,10 @@ for index, row in df_final_keepPositionOrder.iterrows():
 df_final_keepPositionOrder=df_final_keepPositionOrder.drop(columns="Top 3 Finish")
 df_final_keepPositionOrder.to_csv("df_final_keepPositionOrder.csv",index=False)
     
-
+plt.figure(figsize=(10,7))
+sns.heatmap(df_final_keepPositionOrder.corr(), annot=True, mask=False, annot_kws={"size": 7})
+plt.subplots_adjust(left=0.35)
+plt.show()
 
 #PRAVLJENJE X I Y PODATAKA
 
@@ -333,7 +336,6 @@ while year<=g:
     X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
     #---------------------------------------------------------------------------------------------------
     print("---------------------------REGRESIJA----------------------------------------------------------")
-
     # Linearna regresija model
     from sklearn.linear_model import Lasso
     regressor = LinearRegression()
@@ -1320,7 +1322,7 @@ y = weather_df_final_test["stop"]
 x = weather_df_final_test.drop(columns=["stop"])
 X_train, X_test, y_train, y_test = train_test_split(x,y, test_size=0.3, random_state=42)
 
-regressor = RandomForestRegressor(n_estimators=100,max_depth=5)
+regressor = RandomForestRegressor(n_estimators=50,max_depth=10)
 
 regressor.fit(X_train, y_train)
 
@@ -1536,7 +1538,7 @@ def animate(frame):
     return lines
 
 ani = FuncAnimation(fig, animate, frames=len(poeni[0])+1, init_func=init, interval=1000, blit=True)
-
+ani.save('animacija2.gif', writer='imagemagick', fps=2)
 plt.show()
 
 driver_ids = matricareal[:, 0]
@@ -1570,7 +1572,7 @@ def animate(frame):
     return lines
 
 ani = FuncAnimation(fig, animate, frames=len(poeni[0])+1, init_func=init, interval=1000, blit=True)
-
+ani.save('animacija3.gif', writer='imagemagick', fps=2)
 plt.show()
 
 #----------------------------------------------------------------------------------------
@@ -1609,7 +1611,7 @@ plt.bar(model_names, r2_adjusted_values, color=['blue'], width=bar_width)
 for i, value in enumerate(r2_adjusted_values):
     plt.text(i, value + 0.02, f'{value:.2f}', ha='center', va='bottom', fontsize=10)
 plt.ylim(0, 1) 
-plt.title('R^2 adjusted za promenu guma (pitstop)')
+plt.title('R^2 adjusted za promenu pneumatika (pitstop)')
 plt.xlabel('Modeli')
 plt.ylabel('R^2 adjusted vrednost')
 plt.show()
@@ -1621,7 +1623,7 @@ bar_width = 0.2
 plt.bar(metric_names, model1_metrics, color=['skyblue', 'lightgreen'], width=bar_width)
 for i, value in enumerate(model1_metrics):
     plt.text(i, value + 0.02, f'{value:.2f}', ha='center', va='bottom', fontsize=10)
-plt.title('Performanse modela po metrikama za promenu guma')
+plt.title('Performanse modela po metrikama za promenu pneumatika')
 plt.xlabel('Metrike')
 plt.ylabel('Vrednosti metrike')
 plt.show()
@@ -1634,7 +1636,7 @@ for i, procenat in enumerate(procenat_pogodaka):
     plt.text(i, procenat + 1, f'{procenat:.2f}%', ha='center', va='bottom', fontsize=10)
 plt.xlabel('Modeli')
 plt.ylabel('Procenat prosečne greške')
-plt.title(f'Procenat prosečne greške za promenu guma za {year1}. godinu')
+plt.title(f'Procenat prosečne greške za promenu pneumatika za {year1}. godinu')
 plt.ylim(0, 100)
 plt.show()
 #---------------------------------------------------------------------
@@ -1764,6 +1766,6 @@ feature_names = X_train.columns
 plt.barh(range(len(importancespitstop)), importancespitstop, tick_label=feature_names)
 plt.ylabel('Atributi')
 plt.xlabel('Značajnost atributa')
-plt.title('Značajnost atributa za Random Forest Regresion za Predikciju promene guma')
+plt.title('Značajnost atributa za Random Forest Regresion za Predikciju promene pneumatika')
 plt.subplots_adjust(left=0.3)
 plt.show()
